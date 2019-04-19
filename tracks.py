@@ -46,7 +46,7 @@ def lookup(d, key):
 
 stuff = ET.parse(fname)
 all = stuff.findall('dict/dict/dict')
-print('Dict count:', len(all))
+print('Tracks count:', len(all))
 for entry in all:
     if ( lookup(entry, 'Track ID') is None ) : continue
 
@@ -59,8 +59,6 @@ for entry in all:
 
     if name is None or artist is None or album is None :
         continue
-
-    print(name, artist, album, count, rating, length)
 
     cur.execute('''INSERT OR IGNORE INTO Artist (name)
         VALUES ( ? )''', ( artist, ) )
@@ -76,9 +74,11 @@ for entry in all:
         (title, album_id, len, rating, count)
         VALUES ( ?, ?, ?, ?, ? )''',
         ( name, album_id, length, rating, count ) )
+
 print ("----------------------------------------------------")
-print("Track  Artist  Album")
+print("Track | Artist | Album")
+print ("----------------------------------------------------")
 tracks = cur.execute('''SELECT track.title,Artist.name,Album.title FROM Track JOIN Artist JOIN Album ON Track.album_id=Album.id AND Album.artist_id = Artist.id''')
 for track in tracks:
-    print(track[0],track[1],track[2])
+    print(track[0]," | ",track[1]," | ",track[2])
 conn.commit()
