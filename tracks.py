@@ -8,8 +8,14 @@ cur.executescript('''
 DROP TABLE IF EXISTS Artist;
 DROP TABLE IF EXISTS Album;
 DROP TABLE IF EXISTS Track;
+DROP TABLE IF EXISTS Genre;
 
 CREATE TABLE Artist (
+    id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    name    TEXT UNIQUE
+);
+
+CREATE TABLE Genre (
     id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     name    TEXT UNIQUE
 );
@@ -25,8 +31,10 @@ CREATE TABLE Track (
         AUTOINCREMENT UNIQUE,
     title TEXT  UNIQUE,
     album_id  INTEGER,
+    genre_id  INTEGER,
     len INTEGER, rating INTEGER, count INTEGER
 );
+
 ''')
 
 
@@ -46,18 +54,19 @@ def lookup(d, key):
 
 stuff = ET.parse(fname)
 all = stuff.findall('dict/dict/dict')
-print('Tracks count:', len(all))
+# print('Tracks count:', len(all))
 for entry in all:
     if ( lookup(entry, 'Track ID') is None ) : continue
 
     name = lookup(entry, 'Name')
     artist = lookup(entry, 'Artist')
     album = lookup(entry, 'Album')
+    genre = lookup(entry, 'Genre')
     count = lookup(entry, 'Play Count')
     rating = lookup(entry, 'Rating')
     length = lookup(entry, 'Total Time')
 
-    if name is None or artist is None or album is None :
+    if name is None or artist is None or album is None or genre is None:
         continue
 
     cur.execute('''INSERT OR IGNORE INTO Artist (name)
@@ -70,15 +79,23 @@ for entry in all:
     cur.execute('SELECT id FROM Album WHERE title = ? ', (album, ))
     album_id = cur.fetchone()[0]
 
+    cur.execute('''INSERT OR IGNORE INTO Genre (name)
+        VALUES ( ? )''', ( genre, ) )
+    cur.execute('SELECT id FROM Genre WHERE name = ? ', (genre, ))
+    genre_id = cur.fetchone()[0]
+
     cur.execute('''INSERT OR REPLACE INTO Track
-        (title, album_id, len, rating, count)
-        VALUES ( ?, ?, ?, ?, ? )''',
-        ( name, album_id, length, rating, count ) )
+        (title, album_id, genre_id, len, rating, count)
+        VALUES ( ?, ?, ?, ?, ?, ? )''',
+        ( name, album_id, genre_id, length, rating, count ) )
 
 print ("----------------------------------------------------")
-print("Track | Artist | Album")
+print("Track | Artist | Album | Genre")
 print ("----------------------------------------------------")
-tracks = cur.execute('''SELECT track.title,Artist.name,Album.title FROM Track JOIN Artist JOIN Album ON Track.album_id=Album.id AND Album.artist_id = Artist.id''')
+tracks = cur.execute('''SELECT Track.title, Artist.name, Album.title, Genre.name
+    FROM Track JOIN Genre JOIN Album JOIN Artist
+    ON Track.genre_id = Genre.ID and Track.album_id = Album.id
+        AND Album.artist_id = Artist.id''')
 for track in tracks:
-    print(track[0]," | ",track[1]," | ",track[2])
+    print(track[0], " | ", track[1], " | ", track[2], " | ", track[3])
 conn.commit()
