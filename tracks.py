@@ -76,5 +76,9 @@ for entry in all:
         (title, album_id, len, rating, count)
         VALUES ( ?, ?, ?, ?, ? )''',
         ( name, album_id, length, rating, count ) )
-
-    conn.commit()
+print ("----------------------------------------------------")
+print("Track  Artist  Album")
+tracks = cur.execute('''SELECT track.title,Artist.name,Album.title FROM Track JOIN Artist JOIN Album ON Track.album_id=Album.id AND Album.artist_id = Artist.id''')
+for track in tracks:
+    print(track[0],track[1],track[2])
+conn.commit()
